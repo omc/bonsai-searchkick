@@ -1,7 +1,7 @@
 # rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |spec|
   spec.name          = 'bonsai-searchkick'
-  spec.version       = '0.0.0'
+  spec.version       = '0.0.1'
 
   spec.authors       = ['Rob Sears', 'Maddie Jones', 'Leo Shue Schuster', 'Nick Zadrozny']
   spec.email         = ['rob@onemorecloud.com', 'maddie@onemorecloud.com', 'leo@onemorecloud.com', 'nick@onemorecloud.com']
