@@ -15,6 +15,7 @@ This gem removes this extra step by supplying an initializer that checks for the
 Add the following to your Gemfile outside of any block:
 
 ```ruby
+gem 'searchkick' # if it's not already there
 gem 'bonsai-searchkick'
 ```
 
