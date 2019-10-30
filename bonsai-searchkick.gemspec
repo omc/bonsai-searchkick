@@ -8,7 +8,11 @@ Gem::Specification.new do |spec|
 
   spec.summary       = 'Initialize your Searchkick client with Bonsai.'
   spec.description   = <<-DESCRIPTION
-
+  This gem offers a shim to set up Searchkick to work with a Bonsai
+  Elasticsearch cluster. The bonsai-searchkick gem automatically sets up the
+  Searchkick client correctly so users don't need to worry about configuring it
+  in their code or writing an initializer. Further details and documentation
+  can be found on this gem's Github repository.
   DESCRIPTION
 
   spec.homepage      = 'https://github.com/omc/bonsai-searchkick'

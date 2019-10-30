@@ -1,119 +1,22 @@
-# bonsai-elasticsearch-rails gem
+# bonsai-searchkick gem
 
-This gem offers a shim to connect Ruby on Rails applications with a Bonsai Elasticsearch cluster. It is intended to simplify the process of initializing an Elasticsearch client and pointing the client to a Bonsai cluster. The bonsai-elasticsearch-rails gem automatically sets up the Elasticsearch client correctly so users don't need to worry about configuring it in their code or writing an initializer.
+This gem offers a shim to set up [Searchkick](https://github.com/ankane/searchkick) to work with a Bonsai Elasticsearch cluster. The bonsai-searchkick gem automatically sets up the Searchkick client correctly so users don't need to worry about configuring it in their code or writing an initializer.
 
 ## Details
 
-The gem initializes the Elasticsearch client using an environment variable called `BONSAI_URL`, which contains the URL of the cluster. Bonsai clusters will have a URL that looks like this:
+The Searchkick gem looks for an environment variable called `ELASTICSEARCH_URL` which is populated with a URL for an Elasticsearch cluster. If this variable is not found, it assumes the cluster is located at `http://localhost:9200`.
 
-https://user1234:pass5678@cluster-slug-123.aws-region-X.bonsai.io/
+On platforms like [Heroku](https://elements.heroku.com/addons/bonsai) or [Manifold.co](https://www.manifold.co/services/bonsai-elasticsearch), adding Bonsai to an application creates an environment variable called `BONSAI_URL`, populated with this URL. Searchkick users on these platforms therefore need to take the extra step of creating the `ELASTICSEARCH_URL` and populating it with the contents of the `BONSAI_URL`.
 
-On Heroku, this variable is created and populated automatically when Bonsai is added to the application. Heroku users therefore do not need to perform any additional configuration to connect to their cluster after adding the bonsai-elasticsearch-rails gem.
+This gem removes this extra step by supplying an initializer that checks for the presence of a `BONSAI_URL` variable and using it to populate the `ELASTICSEARCH_URL` variable. It also adds some logic around port specification, which was affected by [this change](https://github.com/elastic/elasticsearch-ruby/issues/669) to the elasticsearch-ruby gem, which Searchkick relies on.
 
-Users who are self-hosting their Rails application will need to make sure this environment variable is present by setting the :
+## Usage
 
-```
-$ export BONSAI_URL="https://user1234:pass5678@aws-region-X.bonsai.io/"
-```
-
-The cluster URL is available via the Bonsai dashboard. For more information see [docs.bonsai.io](https://docs.bonsai.io).
-
-## Installation
-
-The gem will work with any version of Elasticsearch. Users of Elasticsearch 1.x, 2.x and 5.x will only need to install the bonsai-elasticsearch-rails gem. The gem will pull in the appropriate Elasticsearch libraries as needed automatically. Users on newer versions of Elasticsearch, or using unofficial branches of the elasticsearch-rails gem, will need some additional configuration.
-
-| Branch | Gem Version | Elasticsearch | Notes
-|:------:|:-----------:| :-----------: | :-----------------------: |
-| master | '0.3.0'     | any, forks    | Needs extra configuration |
-| 1.x    | '1.0.0'     | 1.x           |                           |
-| 2.x    | '2.0.0'     | 2.x           |                           |
-| 5.x    | '5.0.0'     | 5.x           |                           |
-| 6.x    | '6.0.0'     | 6.x           | Needs extra configuration |
-| 7.x    | '7.0.1'     | master        | Needs extra configuration |
-
-### Elasticsearch 1.x
-
-Add the following to your Gemfile:
+Add the following to your Gemfile outside of any block:
 
 ```ruby
-gem 'bonsai-elasticsearch-rails', '~> 1'
+gem 'bonsai-searchkick'
 ```
-
-This will pull in all the necessary 1.x dependencies automatically, so the elasticsearch-rails and elasticsearch-model gems do not need to specifically referenced.
-
-### Elasticsearch 2.x
-
-Add the following to your Gemfile:
-
-```ruby
-gem 'bonsai-elasticsearch-rails', '~> 2'
-```
-
-This will pull in all the necessary 2.x dependencies automatically, so the elasticsearch-rails and elasticsearch-model gems do not need to specifically referenced.
-
-### Elasticsearch 5.x
-
-Add the following to your Gemfile:
-
-```ruby
-gem 'bonsai-elasticsearch-rails', '~> 5'
-```
-
-This will pull in all the necessary 5.x dependencies automatically, so the elasticsearch-rails and elasticsearch-model gems do not need to specifically referenced.
-
-### Elasticsearch 6.x
-
-Add the following to your Gemfile:
-
-```ruby
-gem 'bonsai-elasticsearch-rails', '~> 6'
-gem 'elasticsearch-model', github: 'elastic/elasticsearch-rails', branch: '6.x'
-gem 'elasticsearch-rails', github: 'elastic/elasticsearch-rails', branch: '6.x'
-```
-
-The elasticsearch-model and elasticsearch-rails gems do not have a 6.x listing on RubyGems.org, which means they can not be added automatically via Bundler. Instead they need to be obtained from the GitHub repository.
-
-
-### Elasticsearch 7.x
-
-Add the following to your Gemfile:
-
-```ruby
-gem 'bonsai-elasticsearch-rails', '~> 7'
-gem 'elasticsearch-model', github: 'elastic/elasticsearch-rails', branch: 'master'
-gem 'elasticsearch-rails', github: 'elastic/elasticsearch-rails', branch: 'master'
-```
-
-The elasticsearch-model and elasticsearch-rails gems do not have a 6.x listing on RubyGems.org, which means they can not be added automatically via Bundler. Instead they need to be obtained from the GitHub repository.
-
-### Any version of Elasticsearch
-
-The master branch of this gem will support any arbitrary version of Elasticsearch as long as the elasticsearch-rails and elasticsearch-model gems are listed in the Gemfile. This is useful if the application needs a version of the elasticsearch-* gems that are:
-
-* Old, EOL, yanked, or no longer supported
-* On an unofficial or development branch
-* At the development's bleeding edge
-* Forked into a different project
-
-Add the bonsai-elasticsearch-rails gem to your Gemfile with the twiddle-wakka operator, then add the elasticsearch-rails and elasticsearch-model gems in whatever way applies to your specific need:
-
-```ruby
-gem 'bonsai-elasticsearch-rails', '~> 0'
-
-# Referencing GitHub repos:
-gem 'elasticsearch-model', github: '<GITHUB REPO>', branch: '<BRANCH>'
-gem 'elasticsearch-rails', github: '<GITHUB REPO>', branch: '<BRANCH>'
-
-# Referencing local gems
-gem 'elasticsearch-rails', path: '/path/to/the/gem/elasticsearch-rails'
-gem 'elasticsearch-model', path: '/path/to/the/gem/elasticsearch-model'
-
-# Referencing a specific version on RubyGems.org
-gem 'elasticsearch-model', 'x.y.z'
-gem 'elasticsearch-rails', 'x.y.z'
-```
-
-### Installing with Bundler
 
 When the gem has been added to your Gemfile, run:
 
@@ -121,7 +24,37 @@ When the gem has been added to your Gemfile, run:
 $ bundle install
 ```
 
-This will bring in all the necessary dependencies. Now when the Rails application starts up, it will be automatically initialized with an Elasticsearch client configured to use a Bonsai cluster. See the [official documentation](https://github.com/elastic/elasticsearch-rails) for information on how to integrate this client into your Rails application.
+This will bring in all the necessary dependencies, namely the Searchkick gem.
+
+### Hosting on Heroku or Manifold
+
+If you are running your application in Heroku or Manifold, the `BONSAI_URL` will be automatically created when you add Bonsai to your app. The gem will find it and set up the client automatically with no further work needed.
+
+If you are using Heroku/Manifold, but have a direct account with Bonsai, then you will need to set the `BONSAI_URL` manually through the UI. You can get the URL from Bonsai, in your cluster dashboard, in the "Credentials" tab.
+
+### Hosting somewhere else
+
+If you're hosting your app somewhere else, you will need to create and populate the environment variable manually:
+
+```
+export BONSAI_URL="https://user1234:pass5678@cluster-slug-123.aws-region-X.bonsai.io:443"
+```
+
+### Developing Locally
+
+If you are developing and have a Elasticsearch cluster running locally (`localhost:9200`), then you do not need to set either the `BONSAI_URL` or `ELASTICSEARCH_URL`. If your local cluster has some non-default url, like `http://127.0.0.1:9250`, then you will need to put this into the `ELASTICSEARCH_URL` variable:
+
+```
+export ELASTICSEARCH="https://user1234:pass5678@cluster-slug-123.aws-region-X.bonsai.io:443"
+```
+
+**It's a best practice to use the BONSAI_URL to connect to Bonsai clusters, and ELASTICSEARCH_URL to connect to local or non-Bonsai clusters.** And if you aren't using Bonsai for anything, then what do you need this gem for??
+
+## Running
+
+When the Rails application starts up, an initializer will be loaded that looks for the `BONSAI_URL` variable. If it is found, and is valid, a Searchkick client will be initialized and correctly configured to use a Bonsai cluster.
+
+See the [official documentation](https://github.com/ankane/searchkick) for information on all the things Searchkick can do. We have [additional documentation](https://docs.bonsai.io/article/99-searchkick) on getting up and running with Searchkick on Bonsai.io.
 
 ## Support
 
