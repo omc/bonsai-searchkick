@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'rails' # will import the Rails code, if it's not already loaded.
 require_relative '../lib/bonsai/searchkick/railtie'
 
