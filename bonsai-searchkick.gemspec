@@ -28,7 +28,6 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency 'searchkick', '< 99'
 
   spec.add_development_dependency 'bundler', '~> 1'
-  spec.add_development_dependency 'rake', '< 11.0'
   spec.add_development_dependency 'rspec', '~> 3.5'
   spec.add_development_dependency 'rails', '> 0'
 end

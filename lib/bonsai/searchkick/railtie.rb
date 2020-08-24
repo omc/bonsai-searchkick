@@ -65,6 +65,22 @@ module Bonsai
           @@url
         end
 
+        # Modify the Searchkick defaults.
+        #
+        # Returns
+        #   * A Hash of options for the Searchkick client
+        def bonsai_options
+          {
+            transport_options: {
+              headers: {
+                user_agent: 'Bonsai Searchkick Client',
+                'Keep-Alive': 'timeout=10, max=1000'
+              },
+            },
+            accept_encoding: 'gzip'
+          }
+        end
+
         # Filter out the credentials from the logs.
         #
         # This gem outputs some debug messages to indicate that it has
@@ -91,6 +107,10 @@ module Bonsai
         @@port = searchkick_port
         @@ported_url = maybe_add_port
         @@filtered_url = filtered_url
+
+        # Override some Searchkick defaults
+        Searchkick.remove_instance_variable(:@client) if Searchkick.instance_variable_get(:@client).present?
+        Searchkick.client_options = bonsai_options
 
         if @@url.present? && @@url.is_a?(String) && @@url.is_valid_searchkick_url?
           log("Bonsai: Initializing default Searchkick client with #{@@filtered_url}")
