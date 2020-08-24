@@ -19,6 +19,15 @@ module Bonsai
           end
         end
 
+        # Set the Searchkick BulkReindexJob concurrency
+        class ::Searchkick::BulkReindexJob
+          concurrency write_concurrency if defined?(ActiveJob::TrafficControl)
+
+          def write_concurrency
+            ENV.fetch('BULK_CONCURRENCY', 2)
+          end
+        end
+
         # Check the URL for a port.
         #
         # Returns
@@ -81,6 +90,35 @@ module Bonsai
           }
         end
 
+        # The Redis gem is a runtime dependency of the Bonsai Searchkick gem, so
+        # it should be available, but may not have been loaded yet. Try to load
+        # it, but don't crash if there is a problem.
+        def maybe_load_redis
+          require 'redis'
+        rescue Exception
+          log("Could not load Redis!")
+        end
+
+        # The ActiveJob::TrafficControl library is a runtime dependency of the
+        # Bonsai Searchkick gem, so it should be available, but may not have
+        # been loaded yet. Try to load it, but don't crash if there is a
+        # problem.
+        def maybe_load_traffic_control
+          require 'active_job/traffic_control'
+        rescue Exception
+          log("Could not load ActiveJob::TrafficControl!")
+        end
+
+        # The ActiveJob::TrafficControl library is a runtime dependency of the
+        # Bonsai Searchkick gem, so it should be available, but may not have
+        # been loaded yet. Try to load it, but don't crash if there is a
+        # problem.
+        def maybe_load_typhoeus
+          require 'typhoeus'
+        rescue Exception
+          log("Could not load Typhoeus!")
+        end
+
         # Filter out the credentials from the logs.
         #
         # This gem outputs some debug messages to indicate that it has
@@ -94,12 +132,12 @@ module Bonsai
         #     printing.
         #
         def filtered_url
-          @@ported_url.sub(/:[^:@@]+@@/, ':FILTERED@@')
+          @@ported_url.sub(%r{//[\S+]{1,}:[\S+]{1,}@}, '//REDACTED@')
         end
 
         # Print a debug message to STDOUT. Muted when in a test environment.
         def log(message)
-          @@logger.debug(message) unless Rails.env.test?
+          @@logger.debug("[Bonsai]: #{message}") unless Rails.env.test?
         end
 
         @@logger = Logger.new(STDOUT)
@@ -108,16 +146,30 @@ module Bonsai
         @@ported_url = maybe_add_port
         @@filtered_url = filtered_url
 
-        # Override some Searchkick defaults
-        Searchkick.remove_instance_variable(:@client) if Searchkick.instance_variable_get(:@client).present?
-        Searchkick.client_options = bonsai_options
-
         if @@url.present? && @@url.is_a?(String) && @@url.is_valid_searchkick_url?
-          log("Bonsai: Initializing default Searchkick client with #{@@filtered_url}")
+          log("Initializing default Searchkick client with #{@@filtered_url}")
           ENV['ELASTICSEARCH_URL'] = @@ported_url
         else
-          log('Bonsai: Neither BONSAI_URL nor ELASTICSEARCH_URL are set in this environment.')
-          log('Bonsai: Proceeding with Searchkick default of http://localhost:9200.')
+          log('Neither BONSAI_URL nor ELASTICSEARCH_URL are set in this environment.')
+          log('Proceeding with Searchkick default of http://localhost:9200.')
+        end
+
+        maybe_load_redis
+        maybe_load_traffic_control
+        maybe_load_typhoeus
+
+        # Override some Searchkick defaults
+        log('Setting up HTTP Keep-Alive and GZIP compression.')
+        ::Searchkick.remove_instance_variable(:@client) if Searchkick.instance_variable_get(:@client).present?
+        ::Searchkick.client_options = bonsai_options
+        log('Typhoeus found. Using libcurl like a boss.') if defined?(Typhoeus)
+        if defined?(Redis)
+          log('Redis found. Setting up indexing queue.')
+          ::Searchkick.redis = ::Redis.new
+          if defined?(ActiveJob::TrafficControl)
+            ::ActiveJob::TrafficControl.client = ::Searchkick.redis
+            log("TrafficControl found. Setting write concurrency to #{::Searchkick::BulkReindexJob.new.write_concurrency}.")
+          end
         end
       end
     end

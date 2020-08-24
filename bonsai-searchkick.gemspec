@@ -1,7 +1,7 @@
 # rubocop:disable Metrics/BlockLength
 Gem::Specification.new do |spec|
   spec.name          = 'bonsai-searchkick'
-  spec.version       = '0.0.1'
+  spec.version       = '0.0.2'
 
   spec.authors       = ['Rob Sears', 'Maddie Jones', 'Leo Shue Schuster', 'Nick Zadrozny']
   spec.email         = ['rob@onemorecloud.com', 'maddie@onemorecloud.com', 'leo@onemorecloud.com', 'nick@onemorecloud.com']
@@ -26,7 +26,9 @@ Gem::Specification.new do |spec|
   # does not matter. `gem build` throws an error if a version range is not
   # specified, so it's set arbitrarily high.
   spec.add_runtime_dependency 'searchkick', '< 99'
-
+  spec.add_runtime_dependency 'redis', '~> 4.0'
+  spec.add_runtime_dependency 'activejob-traffic_control', '> 0'
+  spec.add_runtime_dependency 'typhoeus', '> 0'
   spec.add_development_dependency 'bundler', '~> 1'
   spec.add_development_dependency 'rspec', '~> 3.5'
   spec.add_development_dependency 'rails', '> 0'
